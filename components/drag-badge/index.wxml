@@ -1,0 +1,14 @@
+<!--components/drag-badge/index.wxml-->
+<view 
+  class="{{isDrag ? 'badge-container selected': 'badge-container'}}"
+  catchtouchmove="handleMove"
+>
+  <block wx:if="{{count != 0}}">
+    <canvas 
+      class="{{isDrag ? 'badge-cvs selected': 'badge-cvs'}}"
+      type="2d" 
+      id="{{name}}"
+      catchtouchend="handleMoveEnd"
+    ></canvas>
+  </block>
+</view>

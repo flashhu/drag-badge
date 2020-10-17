@@ -1,0 +1,7 @@
+/* pages/index.wxss */
+.msg-container {
+  display: flex;
+  justify-content: space-between;
+  padding: 40rpx 60rpx 40rpx 60rpx;
+  border-bottom: 1rpx solid rgb(223, 223, 223);
+}

@@ -1,0 +1,21 @@
+/* components/drag-badge/index.wxss */
+.badge-container {
+  height: 100%;
+  /* border: 1px solid #000; */
+}
+
+.badge-container.selected {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+}
+
+.badge-cvs {
+  height: 100%;
+  width: 50rpx;
+}
+
+.badge-cvs.selected {
+  width: 100vw;
+}

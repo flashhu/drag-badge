@@ -1,0 +1,15 @@
+<!--pages/index.wxml-->
+<block wx:for="{{msg}}" wx:key="index">
+  <view class="msg-container" data-index="{{index}}">
+    <view class="msg-content">
+      <text>{{item}}</text>     
+    </view>
+    <view class="badge-container">
+    </view>
+    <badge
+      name="cvs{{index}}"
+      count="{{3}}"
+      binddisappear="handleDisappear"
+    />
+  </view>
+</block>
