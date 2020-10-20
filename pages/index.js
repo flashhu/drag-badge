@@ -1,8 +1,10 @@
 // pages/index.js
 const defaultMsg = () => {
   let res = [];
-  for(let i = 1;i < 12;i ++) {
-    res.push(`这是第${i}条测试消息`);
+  for(let i = 1;i < 3;i ++) {
+    res.push({
+      content: `这是第${i}条测试消息`,
+      count: 1});
   }
   return res;
 }
@@ -25,6 +27,10 @@ Page({
   },
 
   handleDisappear: function (event) {
+    const id = event.target.id;
+    let msg = this.data.msg;
+    msg[id].count --;
+    this.setData({msg: msg})
     console.log(event, `read!`)
   },
 

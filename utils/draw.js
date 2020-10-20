@@ -1,6 +1,8 @@
-const isiOS = () => {
+/**
+ * 判断设备是安卓还是iOS
+ */
+export const isiOS = () => {
   const system = wx.getSystemInfoSync().system;
-  console.log(system.slice(0, 2));
   if(system.slice(0, 3) === "iOS") {
     return true;
   }else {
@@ -19,7 +21,9 @@ export const setCvsSize = (instance, height, width) => {
   const dpr = wx.getSystemInfoSync().pixelRatio;
   instance.cvs.width = width * dpr;
   instance.cvs.height = height * dpr;
-  instance.ctx.scale(dpr, dpr);
+  if (isiOS()) {
+    instance.ctx.scale(dpr, dpr);
+  }
 }
 
 /**
@@ -51,6 +55,13 @@ const drawText = (ctx, value, x, y) => {
   ctx.strokeText(value, x, y);
 }
 
+/**
+ * 画徽标 （带判断要不要画文字）
+ * @param {*} ctx 
+ * @param {Boolean} dot 红点模式
+ * @param {*} defCircle 初始圆x, y,r统一值
+ * @param {*} value 徽标上显示的已处理文本内容
+ */
 export const drawBadge = (ctx, dot, defCircle, value) => {
   drawCircle(ctx, defCircle, defCircle, defCircle);
   if (!dot) {

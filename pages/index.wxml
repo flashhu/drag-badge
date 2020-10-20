@@ -2,13 +2,14 @@
 <block wx:for="{{msg}}" wx:key="index">
   <view class="msg-container" data-index="{{index}}">
     <view class="msg-content">
-      <text>{{item}}</text>     
+      <text>{{item.content}}</text>     
     </view>
     <view class="badge-container">
     </view>
     <badge
+      id="{{index}}"
       name="cvs{{index}}"
-      count="{{3}}"
+      count="{{item.count}}"
       binddisappear="handleDisappear"
     />
   </view>

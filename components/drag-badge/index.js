@@ -3,7 +3,8 @@ import {
   drawBadge, 
   drawOutOfRange, 
   drawInRange,
-  getRAfterMove
+  getRAfterMove,
+  isiOS
 } from '../../utils/draw.js'
 
 // 最大拖拽距离
@@ -50,15 +51,9 @@ Component({
         const r = await this.getCvsAndCtx(this.properties.name);
         if (r) {
           this.setData({cvsInstance: r});
-
           const defCircle = this.properties.dot ? DEF_CIRCLE_DOT : DEF_CIRCLE;
           const value = this.properties.count > MAX_COUNT ? `${MAX_COUNT}+` : this.properties.count;
           drawBadge(r.ctx, this.properties.dot, defCircle, value);
-          // drawCircle(r.ctx, defCircle, defCircle, defCircle);
-          // if(!this.properties.dot) {
-            
-          //   drawText(r.ctx, value , defCircle, defCircle * 1.4);
-          // }
         }
       }
     }
@@ -78,7 +73,12 @@ Component({
               const ctx = cvs.getContext('2d');
               const initialSize = { h: res[0].height, w: res[0].width };
               const cvsInstance = { ctx, cvs, initialSize};
+              const dpr = wx.getSystemInfoSync().pixelRatio;
               setCvsSize(cvsInstance, res[0].height, res[0].width);
+              if (!isiOS()) {
+                // 安卓只设一次 画布大小重新缩放后 调用倍数会叠加 导致红点巨大
+                cvsInstance.ctx.scale(dpr, dpr);
+              }
               resolve(cvsInstance);
             } else {
               reject(error(`not get canvas ${selector}`));
@@ -127,6 +127,8 @@ Component({
     },
     // 拖拽停止
     handleMoveEnd: function (event) {
+      // 真机点击也会触发该事件
+      if(!this.data.isDrag) return;
       const distance = this.data.distance;
       const size = this.data.cvsInstance.initialSize;
       setCvsSize(this.data.cvsInstance, size.h, size.w);
@@ -142,7 +144,7 @@ Component({
           // 防止 css 修改未生效 导致红点显示但宽高比例有误
           setTimeout(()=>{
             drawBadge(this.data.cvsInstance.ctx, this.properties.dot, defCircle, value);
-          }, 20) 
+          }, 20);
         } else {
           this.triggerEvent('disappear', {})
         }
