@@ -72,7 +72,9 @@ Component({
               const cvs = res[0].node;
               const ctx = cvs.getContext('2d');
               const initialSize = { h: res[0].height, w: res[0].width };
-              const cvsInstance = { ctx, cvs, initialSize};
+              // 用于计算初始点的位置 防止机型不同导致取数异常
+              const initialPos = {left: cvs._left, top: cvs._top};
+              const cvsInstance = { ctx, cvs, initialSize, initialPos};
               const dpr = wx.getSystemInfoSync().pixelRatio;
               setCvsSize(cvsInstance, res[0].height, res[0].width);
               if (!isiOS()) {
@@ -96,8 +98,8 @@ Component({
       let fixCircle = this.data.fixCircle;
       if (!this.data.fixCircle) {
         fixCircle = {
-          x: this.data.cvsInstance.cvs._left + defCircle,
-          y: this.data.cvsInstance.cvs._top + defCircle
+          x: this.data.cvsInstance.initialPos.left + defCircle,
+          y: this.data.cvsInstance.initialPos.top + defCircle
         };
         this.setData({ fixCircle: fixCircle});
       }
@@ -108,21 +110,25 @@ Component({
         const w = wx.getSystemInfoSync().windowWidth;
         const h = wx.getSystemInfoSync().windowHeight;
         setCvsSize(this.data.cvsInstance, h, w);
-        this.setData({isDrag: true})
+        this.setData({ isDrag: true });
       }
       if (!this.data.isOutOfRange && distance > MAX_DRAG_DISTANCE) {
         this.setData({ isOutOfRange: true });
       }
       this.setData({distance: distance})
 
-      // 绘图
-      if (distance > defCircle) {
-        const r = getRAfterMove(distance, MAX_DRAG_DISTANCE, defCircle);
-        const value = this.properties.count > MAX_COUNT ? `${MAX_COUNT}+` : this.properties.count;
-        drawOutOfRange(this.data.cvsInstance, this.data.dot, value, touchCircle, r.touchR);
-        if (!this.data.isOutOfRange && distance < MAX_DRAG_DISTANCE) {
-          drawInRange(this.data.cvsInstance.ctx, fixCircle, touchCircle, r);
-        }
+      // 已处在拖拽状态
+      if (this.data.isDrag) {
+        this.handleDraw(distance, defCircle, touchCircle, fixCircle);
+      }
+    },
+    // 拖动时绘图
+    handleDraw: function (distance, defCircle, touchCircle, fixCircle) {
+      const r = getRAfterMove(distance, MAX_DRAG_DISTANCE, defCircle);
+      const value = this.properties.count > MAX_COUNT ? `${MAX_COUNT}+` : this.properties.count;
+      drawOutOfRange(this.data.cvsInstance, this.data.dot, value, touchCircle, r.touchR);
+      if (!this.data.isOutOfRange && distance < MAX_DRAG_DISTANCE) {
+        drawInRange(this.data.cvsInstance.ctx, fixCircle, touchCircle, r);
       }
     },
     // 拖拽停止
@@ -143,7 +149,9 @@ Component({
           const value = this.properties.count > MAX_COUNT ? `${MAX_COUNT}+` : this.properties.count;
           // 防止 css 修改未生效 导致红点显示但宽高比例有误
           setTimeout(()=>{
-            drawBadge(this.data.cvsInstance.ctx, this.properties.dot, defCircle, value);
+            if(!this.data.isDrag) {
+              drawBadge(this.data.cvsInstance.ctx, this.properties.dot, defCircle, value);
+            }
           }, 20);
         } else {
           this.triggerEvent('disappear', {})

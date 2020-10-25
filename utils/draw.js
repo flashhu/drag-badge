@@ -84,7 +84,7 @@ export const getRAfterMove = (distance, maxDragDistance, initialR ) => {
 }
 
 /**
- * 画移动圆
+ * 画移动圆(包含清除画布)
  * 与拖拽范围无关，必画
  * @param {*} instance {cvs, ctx}
  * @param {Boolean} dot 红点模式
