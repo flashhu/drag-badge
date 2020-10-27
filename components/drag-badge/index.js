@@ -5,7 +5,8 @@ import {
   drawInRange,
   getRAfterMove,
   isiOS,
-  badgeRebound
+  badgeRebound,
+  badgeExplode
 } from '../../utils/draw.js'
 
 // 最大拖拽距离
@@ -111,6 +112,11 @@ Component({
       const rate = (touchCircle.x - fixCircle.x) / (touchCircle.y - fixCircle.y);
       const angle = Math.atan(rate);
 
+      // 已处在拖拽状态
+      if (this.data.isDrag) {
+        this.handleDraw(distance, defCircle, touchCircle, fixCircle);
+      }
+
       // 首次拖拽 canvas尺寸放大 / 判断状态
       if (!this.data.isDrag && distance > defCircle) {
         const w = wx.getSystemInfoSync().windowWidth;
@@ -122,20 +128,19 @@ Component({
         this.setData({ isOutOfRange: true });
       }
       this.setData({ distance: distance, angle: angle})
-
-      // 已处在拖拽状态
-      if (this.data.isDrag) {
-        this.handleDraw(distance, defCircle, touchCircle, fixCircle);
-      }
     },
     // 拖动时绘图
     handleDraw: function (distance, defCircle, touchCircle, fixCircle) {
       const r = getRAfterMove(distance, MAX_DRAG_DISTANCE, defCircle);
       const value = this.properties.count > MAX_COUNT ? `${MAX_COUNT}+` : this.properties.count;
-      drawOutOfRange(this.data.cvsInstance, this.data.dot, value, touchCircle, r.touchR);
+      // 连接带
       if (!this.data.isOutOfRange && distance < MAX_DRAG_DISTANCE) {
-        drawInRange(this.data.cvsInstance.ctx, fixCircle, touchCircle, r);
+        drawInRange(this.data.cvsInstance, fixCircle, touchCircle, r);
+      } else {
+        this.data.cvsInstance.ctx.clearRect(0, 0, this.data.cvsInstance.cvs.width, this.data.cvsInstance.cvs.height);
       }
+      // 移动圆
+      drawBadge(this.data.cvsInstance.ctx, this.data.dot, { x: touchCircle.x, y: touchCircle.y, r: r.touchR }, value);
     },
     // 拖拽停止
     handleMoveEnd: function (event) {
@@ -155,16 +160,21 @@ Component({
       
       if (distance >= MAX_DRAG_DISTANCE && this.data.isOutOfRange) {
         // 已读 => 爆炸
-      }
-      if (distance < MAX_DRAG_DISTANCE && !this.data.isOutOfRange){
+        badgeExplode(this.data.cvsInstance, touchCircle);
+        // 恢复初始化值 缩放画布 
+        setTimeout(() => {
+          this.initAfterMove(size, distance, defCircle, value);
+        }, 200);
+      } else if (distance < MAX_DRAG_DISTANCE && !this.data.isOutOfRange){
         // 未读 => 回弹
         badgeRebound(this.data.cvsInstance, this.data.angle, this.properties.dot, touchCircle, this.data.fixCircle, defCircle, distance, value);
-      }
-
-      // 恢复初始化值 缩放画布 
-      setTimeout(()=>{
+        // 恢复初始化值 缩放画布 
+        setTimeout(() => {
+          this.initAfterMove(size, distance, defCircle, value);
+        }, 30);
+      } else {
         this.initAfterMove(size, distance, defCircle, value);
-      }, 30);
+      }
     },
     initAfterMove: function (size, distance, defCircle, value) {
       setCvsSize(this.data.cvsInstance, size.h, size.w);

@@ -32,13 +32,20 @@ export const setCvsSize = (instance, height, width) => {
  * @param {*} x 
  * @param {*} y 
  * @param {*} r 
+ * @param {*} color 圆的颜色
  */
-const drawCircle = (ctx, x, y, r) => {
+const drawCircle = (ctx, x, y, r, color='red', type = 'fill') => {
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2, true);
-  ctx.closePath();
-  ctx.fillStyle = 'red';
-  ctx.fill();
+  if(type === 'fill') {
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+  if(type === 'stroke') {
+    ctx.strokeStyle = color;
+    ctx.stroke();
+  }
 }
 
 /**
@@ -104,6 +111,29 @@ export const badgeRebound = (instance, angle, dot, touchC, fixC, r, distance, va
 }
 
 /**
+ * 绘制爆炸效果
+ * @param {*} instance 
+ * @param {*} touchC {x, y}
+ */
+export const badgeExplode = (instance, touchC) => {
+  const ctx = instance.ctx;
+  ctx.clearRect(0, 0, instance.cvs.width, instance.cvs.height);
+  drawCircle(ctx, touchC.x, touchC.y, 8, '#e7e7e7', 'stroke');
+  drawCircle(ctx, touchC.x - 12, touchC.y - 12, 5, '#e7e7e7', 'stroke');
+  drawCircle(ctx, touchC.x + 12, touchC.y + 12, 5, '#e7e7e7', 'stroke');
+  drawCircle(ctx, touchC.x + 12, touchC.y - 12, 3, '#e7e7e7', 'stroke');
+  drawCircle(ctx, touchC.x - 12, touchC.y + 12, 4, '#e7e7e7', 'stroke');
+  setTimeout(()=>{
+    ctx.clearRect(0, 0, instance.cvs.width, instance.cvs.height);
+    drawCircle(ctx, touchC.x, touchC.y, 3, '#e7e7e7', 'stroke');
+    drawCircle(ctx, touchC.x - 12, touchC.y - 12, 7, '#e7e7e7', 'stroke');
+    drawCircle(ctx, touchC.x + 10, touchC.y + 12, 6, '#e7e7e7', 'stroke');
+    drawCircle(ctx, touchC.x + 12, touchC.y - 12, 6, '#e7e7e7', 'stroke');
+    drawCircle(ctx, touchC.x - 12, touchC.y + 10, 5, '#e7e7e7', 'stroke');
+  }, 80);
+}
+
+/**
  * 计算拖拽时固定/移动圆对应的半径
  * @param {*} distance 圆心距
  * @param {*} maxDragDistance 最大拖拽距离
@@ -127,9 +157,6 @@ export const getRAfterMove = (distance, maxDragDistance, initialR ) => {
  * @param {*} touchR 
  */
 export const drawOutOfRange = (instance, dot, value, touchCircle, touchR) => {
-  const ctx = instance.ctx;
-
-  ctx.clearRect(0, 0, instance.cvs.width, instance.cvs.height);
   drawBadge(ctx, dot, { x: touchCircle.x, y: touchCircle.y, r: touchR}, value);
 }
 
@@ -141,7 +168,7 @@ export const drawOutOfRange = (instance, dot, value, touchCircle, touchR) => {
  * @param {*} touchCircle {x, y}
  * @param {*} r {fixR, touchR}
  */
-export const drawInRange = (ctx, fixCircle, touchCircle, r) => {
+export const drawInRange = (instance, fixCircle, touchCircle, r) => {
   const points = calBezierPoint({
     x: fixCircle.x,
     y: fixCircle.y,
@@ -151,7 +178,9 @@ export const drawInRange = (ctx, fixCircle, touchCircle, r) => {
       y: touchCircle.y,
       r: r.touchR
     })
+  const ctx = instance.ctx;
 
+  ctx.clearRect(0, 0, instance.cvs.width, instance.cvs.height);
   drawCircle(ctx, fixCircle.x, fixCircle.y, r.fixR);
   ctx.beginPath();
   ctx.moveTo(points[0].p0.x, points[0].p0.y);
