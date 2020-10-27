@@ -4,7 +4,8 @@ import {
   drawOutOfRange, 
   drawInRange,
   getRAfterMove,
-  isiOS
+  isiOS,
+  badgeRebound
 } from '../../utils/draw.js'
 
 // 最大拖拽距离
@@ -41,6 +42,8 @@ Component({
     fixCircle: null,
     // 两圆点圆心距
     distance: 0,
+    // 两圆夹角（touch - fix）
+    angle: 0,
     // canvas 实例
     cvsInstance: null
   },
@@ -104,6 +107,9 @@ Component({
         this.setData({ fixCircle: fixCircle});
       }
       const distance = Math.sqrt((touchCircle.x - fixCircle.x) ** 2 + (touchCircle.y - fixCircle.y) ** 2);
+      // 斜率推得角度
+      const rate = (touchCircle.x - fixCircle.x) / (touchCircle.y - fixCircle.y);
+      const angle = Math.atan(rate);
 
       // 首次拖拽 canvas尺寸放大 / 判断状态
       if (!this.data.isDrag && distance > defCircle) {
@@ -115,7 +121,7 @@ Component({
       if (!this.data.isOutOfRange && distance > MAX_DRAG_DISTANCE) {
         this.setData({ isOutOfRange: true });
       }
-      this.setData({distance: distance})
+      this.setData({ distance: distance, angle: angle})
 
       // 已处在拖拽状态
       if (this.data.isDrag) {
@@ -135,21 +141,44 @@ Component({
     handleMoveEnd: function (event) {
       // 真机点击也会触发该事件
       if(!this.data.isDrag) return;
+
       const distance = this.data.distance;
       const size = this.data.cvsInstance.initialSize;
+      const ctx = this.data.cvsInstance.ctx;
+      const value = this.properties.count > MAX_COUNT ? `${MAX_COUNT}+` : this.properties.count;
+      const defCircle = this.properties.dot ? DEF_CIRCLE_DOT : DEF_CIRCLE;
+      const touchCircle = {
+        x: event.changedTouches[0].pageX,
+        y: event.changedTouches[0].pageY
+      }
+      ctx.clearRect(0, 0, this.data.cvsInstance.cvs.width, this.data.cvsInstance.cvs.height);
+      
+      if (distance >= MAX_DRAG_DISTANCE && this.data.isOutOfRange) {
+        // 已读 => 爆炸
+      }
+      if (distance < MAX_DRAG_DISTANCE && !this.data.isOutOfRange){
+        // 未读 => 回弹
+        badgeRebound(this.data.cvsInstance, this.data.angle, this.properties.dot, touchCircle, this.data.fixCircle, defCircle, distance, value);
+      }
+
+      // 恢复初始化值 缩放画布 
+      setTimeout(()=>{
+        this.initAfterMove(size, distance, defCircle, value);
+      }, 30);
+    },
+    initAfterMove: function (size, distance, defCircle, value) {
       setCvsSize(this.data.cvsInstance, size.h, size.w);
       this.setData({
         isDrag: false,
         isOutOfRange: false,
         fixCircle: null,
-        distance: 0
-      }, ()=>{
+        distance: 0,
+        angle: 0
+      }, () => {
         if (distance < MAX_DRAG_DISTANCE) {
-          const defCircle = this.properties.dot ? DEF_CIRCLE_DOT : DEF_CIRCLE;
-          const value = this.properties.count > MAX_COUNT ? `${MAX_COUNT}+` : this.properties.count;
           // 防止 css 修改未生效 导致红点显示但宽高比例有误
-          setTimeout(()=>{
-            if(!this.data.isDrag) {
+          setTimeout(() => {
+            if (!this.data.isDrag) {
               drawBadge(this.data.cvsInstance.ctx, this.properties.dot, defCircle, value);
             }
           }, 20);

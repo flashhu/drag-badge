@@ -59,14 +59,48 @@ const drawText = (ctx, value, x, y) => {
  * 画徽标 （带判断要不要画文字）
  * @param {*} ctx 
  * @param {Boolean} dot 红点模式
- * @param {*} defCircle 初始圆x, y,r统一值
+ * @param {*} defCircle 可只传入一值；或 {x, y, r}
  * @param {*} value 徽标上显示的已处理文本内容
  */
-export const drawBadge = (ctx, dot, defCircle, value) => {
-  drawCircle(ctx, defCircle, defCircle, defCircle);
-  if (!dot) {
-    drawText(ctx, value, defCircle, defCircle * 1.4);
+export const drawBadge = (ctx, dot, circle, value) => {
+  if (!circle.x) {
+    circle = {
+      x: circle,
+      y: circle,
+      r: circle
+    }
   }
+  drawCircle(ctx, circle.x, circle.y, circle.r);
+  if (!dot) {
+    drawText(ctx, value, circle.x, circle.y + circle.r * 0.4);
+  }
+}
+
+/**
+ * 绘制回弹 需要10ms
+ * @param {*} instance 实例
+ * @param {*} angle 两圆心夹角 (touch - fix)
+ * @param {*} dot 红点模式
+ * @param {*} touchC {x, y}
+ * @param {*} fixC {x, y}
+ * @param {*} r 
+ * @param {*} distance 圆心距
+ * @param {*} value 徽标中的文字
+ */
+export const badgeRebound = (instance, angle, dot, touchC, fixC, r, distance, value) => {
+  const ctx = instance.ctx;
+  // 原始位置
+  ctx.clearRect(0, 0, instance.cvs.width, instance.cvs.height);
+  drawBadge(ctx, dot, { x: fixC.x, y: fixC.y, r: r}, value);
+  // 回弹位置
+  setTimeout(()=>{
+    ctx.clearRect(0, 0, instance.cvs.width, instance.cvs.height);
+    const boundCircle = {
+      x: touchC.x - distance * Math.sin(angle) * 1.3,
+      y: touchC.y - distance * Math.cos(angle) * 1.3
+    };
+    drawBadge(ctx, dot, {x: boundCircle.x, y: boundCircle.y, r}, value);
+  }, 10);
 }
 
 /**
@@ -96,10 +130,7 @@ export const drawOutOfRange = (instance, dot, value, touchCircle, touchR) => {
   const ctx = instance.ctx;
 
   ctx.clearRect(0, 0, instance.cvs.width, instance.cvs.height);
-  drawCircle(ctx, touchCircle.x, touchCircle.y, touchR);
-  if(!dot) {
-    drawText(ctx, value, touchCircle.x, touchCircle.y + touchR * 0.4);
-  }
+  drawBadge(ctx, dot, { x: touchCircle.x, y: touchCircle.y, r: touchR}, value);
 }
 
 /**
